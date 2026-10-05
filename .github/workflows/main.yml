@@ -1,0 +1,33 @@
+name: Build Mario Kart PSP
+
+on: [push, workflow_dispatch]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Kodu indir
+        uses: actions/checkout@v4
+
+      - name: PSPDEV ile derle
+        run: |
+          docker pull pspdev/pspdev:latest
+          docker run --rm \
+            -v "$GITHUB_WORKSPACE:/source" \
+            -w /source \
+            pspdev/pspdev:latest \
+            sh -c "rm -rf build && mkdir build && cd build && psp-cmake .. && make -j2"
+
+      - name: EBOOT.PBP kontrol et
+        run: |
+          test -f build/EBOOT.PBP
+          cp build/EBOOT.PBP ./EBOOT.PBP
+          ls -lh EBOOT.PBP
+
+      - name: EBOOT.PBP indirilebilir yap
+        uses: actions/upload-artifact@v4
+        with:
+          name: MarioKartPSP-EBOOT-PBP
+          path: EBOOT.PBP
+          if-no-files-found: error
